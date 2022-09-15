@@ -1,10 +1,12 @@
 import random
 import datetime
+import config
 import cassiopeia as cass
 
 
-
-cass.set_riot_api_key("RGAPI-7a90ab5a-fdeb-47d5-ab09-c69fee9e3bc8")  # This overrides the value set in your configuration/settings.
+def dateCheck():
+    print('hi')
+cass.set_riot_api_key(config.api_key)  # This overrides the value set in your configuration/settings.
 
 summoner = cass.get_summoner(name="pandacreeper", region="NA")
 print("{name} is a level {level} summoner on the {region} server.".format(name=summoner.name,
@@ -18,4 +20,5 @@ dateOfMatch = match.start
 print(champion_played.name)
 print(dateOfMatch.format('YYYY-MM-DD'))
 dateToday = datetime.date.today()
-print(dateToday)
+print(match.type())
+print(dateToday.type())
