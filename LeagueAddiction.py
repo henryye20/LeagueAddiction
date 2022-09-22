@@ -4,8 +4,7 @@ import config
 import cassiopeia as cass
 from time import sleep
 import kill
-import PySimpleGUIQt as sg
-import LeagueAddiction as la
+import PySimpleGUI as sg
 global stop 
 stop = False
 Mlimit = -1
@@ -25,10 +24,21 @@ def timeAddT(nam,reg):
     summoner = cass.get_summoner(name=nam, region=reg)
     total = 0
     f = 0
+    sg.one_line_progress_meter(title="Checking match history", current_value=0, max_value=9)
+    key='OK for 1 meter'
+    meter = sg.QuickMeter.active_meters[key]
+    meter.window.DisableClose = False
+    
+
+
     for z in range(10):
         match = summoner.match_history[z]
         dateOfMatch = match.start.to('US/Pacific')
-        
+    
+        if not sg.one_line_progress_meter(title="Checking match history", current_value=z, max_value=9):
+            sleep(0.1)
+            print('returned false')
+            break  
         if not (dateCheck(now,dateOfMatch)):
             continue
     
@@ -38,24 +48,13 @@ def timeAddT(nam,reg):
 def timed(name,region,lim):
     #checks if totaltime played today is greater than the limit every 10 min
     Tlimit = lim
-    while not stop:
-        print("loop")
-        flag = True
-        t = timeAddT(name,region)
-        if(t==-10): 
-            print('ended early')
-            break 
-        p = 0
-        while(t>Tlimit):
-            kill.leaguekill()
-            sleep(1)
-            p += 1
-            if(stop):break
-            if(p==120):
-                flag = False
-                break
-        if(stop):break
-        if flag: sleep(2)   
+    print("loop")
+    t = timeAddT(name,region)
+    p = 0
+    if(t>Tlimit):
+        return True
+    return False
+       
 
 sg.theme('GreenMono')
 def second(x,y,z):
@@ -71,14 +70,14 @@ def second(x,y,z):
     ],
         ]
     window = sg.Window("Second Window", layout)
-    stop = False
     while True:
         event, values = window.read()
         if event == sg.WIN_CLOSED:
             break
         #doesnt work 
         if event == "start":
-            stop = False
+            timed(x,y,z)
+            break
         if event == "stop":
             stop = True
             break
