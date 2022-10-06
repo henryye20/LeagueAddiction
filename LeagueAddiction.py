@@ -24,7 +24,7 @@ def timeAddT(nam,reg):
     summoner = cass.get_summoner(name=nam, region=reg)
     total = 0
     f = 0
-    sg.one_line_progress_meter(title="Checking match history", current_value=0, max_value=9)
+    sg.one_line_progress_meter(title="Checking match history", current_value=0, max_value=9,orientation='h')
     key='OK for 1 meter'
     meter = sg.QuickMeter.active_meters[key]
     meter.window.DisableClose = False
@@ -35,26 +35,47 @@ def timeAddT(nam,reg):
         match = summoner.match_history[z]
         dateOfMatch = match.start.to('US/Pacific')
     
-        if not sg.one_line_progress_meter(title="Checking match history", current_value=z, max_value=9):
-            sleep(0.1)
-            print('returned false')
-            break  
+        if not sg.one_line_progress_meter(title="Checking match history", current_value=z, max_value=9, orientation='h'):
+            print('no')
         if not (dateCheck(now,dateOfMatch)):
             continue
     
         f += match.duration.seconds
     return f
-
-def timed(name,region,lim):
-    #checks if totaltime played today is greater than the limit every 10 min
+def check(name,region,lim):
+    
     Tlimit = lim
     print("loop")
-    t = timeAddT(name,region)
-    p = 0
-    if(t>Tlimit):
+    t = int(timeAddT(name,region))
+    if(t>=Tlimit):
         return True
     return False
-       
+
+def third(x,y,z):
+    sg.theme('SandyBeach')
+    layout = [[sg.Text('10.0', size=(8, 2), font=('Helvetica', 20),
+                justification='center', key='text')],]
+    window = sg.Window('Running', layout, finalize=True,grab_anywhere=True)
+    p = 10
+    while True: 
+        # Please try and use as high of a timeout value as you can                               
+        event, values = window.read(timeout = 1000) 
+        # if user closed the window using X or clicked Quit button
+        Flag = False
+        if event == sg.WIN_CLOSED:
+            break
+        if(p == 0):
+            p = 10
+            print("checking")
+            if not (check(x,y,z)):
+                Flag = True
+        if(Flag):
+            continue
+        kill.leaguekill()
+        p = p - 1
+        window['text'].update(p)
+        #window.refresh()
+    window.close()
 
 sg.theme('GreenMono')
 def second(x,y,z):
@@ -65,21 +86,16 @@ def second(x,y,z):
     [
         sg.Button("Start",key = "start"),
     ],
-    [
-        sg.Button("Stop",key = "stop"),
-    ],
         ]
     window = sg.Window("Second Window", layout)
     while True:
         event, values = window.read()
         if event == sg.WIN_CLOSED:
             break
-        #doesnt work 
+        # 
         if event == "start":
-            timed(x,y,z)
-            break
-        if event == "stop":
-            stop = True
+            window.close()
+            third(x,y,z)
             break
         
     window.close()
@@ -103,12 +119,13 @@ def first():
         sg.Button("Submit",key = "sub"),
     ],
         ]
-    window = sg.Window("League Addiction", layout)
+    window = sg.Window("League Addiction", layout,finalize=True)
     while True:
         event, values = window.read()
         if event == "cancel" or event == sg.WIN_CLOSED:
             break
         if event =="sub":
+            window.close()
             second(values[0],values[1],int(values[2]))
                
     window.close()
