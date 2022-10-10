@@ -22,7 +22,6 @@ def dateCheck(x,y):
 #adds all the time of matches played today
 def timeAddT(nam,reg):
     summoner = cass.get_summoner(name=nam, region=reg)
-    total = 0
     f = 0
     sg.one_line_progress_meter(title="Checking match history", current_value=0, max_value=9,orientation='h')
     key='OK for 1 meter'
@@ -42,39 +41,69 @@ def timeAddT(nam,reg):
     
         f += match.duration.seconds
     return f
-def check(name,region,lim):
+
+def countLs(nam,reg):
+    summoner = cass.get_summoner(name=nam, region=reg)
+    f = 0
+    sg.one_line_progress_meter(title="Checking match history", current_value=0, max_value=9,orientation='h')
+    key='OK for 1 meter'
+    meter = sg.QuickMeter.active_meters[key]
+    meter.window.DisableClose = False
+    
+
+
+    for z in range(10):
+        match = summoner.match_history[z]
+        dateOfMatch = match.start.to('US/Pacific')
+    
+        if not sg.one_line_progress_meter(title="Checking match history", current_value=z, max_value=9, orientation='h'):
+            print('no')
+        if not (dateCheck(now,dateOfMatch)):
+            continue
+        
+        
+    return f
+
+def tcheck(name,region,lim):
     
     Tlimit = lim
     print("loop")
     t = int(timeAddT(name,region))
     if(t>=Tlimit):
         return True
+        #went over limit
+    return False
+
+def Lcheck(name,region,lim):
+    
+
+    if(lim):
+        return True
+        #went over limit
     return False
 
 def third(x,y,z):
     sg.theme('SandyBeach')
-    layout = [[sg.Text('10.0', size=(8, 2), font=('Helvetica', 20),
-                justification='center', key='text')],]
+    layout = [[sg.Text('Time Until Next Check', font=('Helvetica', 40),justification='center', key='text')],
+              [sg.Text('0.0', size=(8, 2), font=('Helvetica', 20),justification='center', key='text')],]
     window = sg.Window('Running', layout, finalize=True,grab_anywhere=True)
-    p = 10
-    while True: 
-        # Please try and use as high of a timeout value as you can                               
-        event, values = window.read(timeout = 1000) 
-        # if user closed the window using X or clicked Quit button
-        Flag = False
+    p = 0
+    Flag = False
+    while True:                               
+        event, values = window.read(timeout = 1000)
         if event == sg.WIN_CLOSED:
             break
         if(p == 0):
             p = 10
             print("checking")
-            if not (check(x,y,z)):
+            Flag = False
+            if not (tcheck(x,y,z)):
                 Flag = True
+        p = p - 1
         if(Flag):
             continue
         kill.leaguekill()
-        p = p - 1
         window['text'].update(p)
-        #window.refresh()
     window.close()
 
 sg.theme('GreenMono')
