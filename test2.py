@@ -1,2 +1,3 @@
-import ctypes
-ctypes.windll.user32.MessageBoxW(0, 'Get back to work!', 'Alert!', 0)
+import PySimpleGUI as sg
+for z in range(60):
+    print('\''+str(z)+'\''+',',end =" ")
