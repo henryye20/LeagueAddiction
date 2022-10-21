@@ -3,10 +3,9 @@ import arrow
 import config
 import cassiopeia as cass
 import kill
+import random
 import PySimpleGUI as sg
-global stop 
-stop = False
-Mlimit = -1
+import bible
 cass.set_riot_api_key(config.api_key)  # This overrides the value set in your configuration/settings.
 #summoner = cass.get_summoner(name="nicthequick", region="NA")
 #match = summoner.match_history[5]
@@ -14,6 +13,7 @@ cass.set_riot_api_key(config.api_key)  # This overrides the value set in your co
 #print(int(a))
 #b = str(float(Decimal(str(a/60)) % 1)*60)
 #print(b)
+
 #checks if the dates of 2 matches are the same
 def dateCheck(x,y):
     if(x.year==y.year and x.month==y.month and x.day==y.day): return True
@@ -25,18 +25,18 @@ def timeAddT(nam,reg):
     now = utc.to('US/Pacific')
     summoner = cass.get_summoner(name=nam, region=reg)
     f = 0
-    sg.one_line_progress_meter(title="Checking match history", current_value=0, max_value=9,orientation='h')
+    r = 15
+    sg.one_line_progress_meter(title="Checking match history", current_value=0, max_value=r-1,orientation='h')
     key='OK for 1 meter'
     meter = sg.QuickMeter.active_meters[key]
     meter.window.DisableClose = False
     
 
-
-    for z in range(10):
+    for z in range(r):
         match = summoner.match_history[z]
         dateOfMatch = match.start.to('US/Pacific')
     
-        if not sg.one_line_progress_meter(title="Checking match history", current_value=z, max_value=9, orientation='h'):
+        if not sg.one_line_progress_meter(title="Checking match history", current_value=z, max_value=r-1, orientation='h'):
             print('no')
         if not (dateCheck(now,dateOfMatch)):
             continue
@@ -49,19 +49,19 @@ def timeAddT(nam,reg):
 def countLs(nam,reg):
     summoner = cass.get_summoner(name=nam, region=reg)
     l = 0
-    sg.one_line_progress_meter(title="Checking match history", current_value=0, max_value=9,orientation='h')
+    r = 15
+    sg.one_line_progress_meter(title="Checking match history", current_value=0, max_value=r-1,orientation='h')
     key2='OK for 1 meter'
     meter = sg.QuickMeter.active_meters[key2]
     meter.window.DisableClose = False
     utc = arrow.utcnow()
     now = utc.to('US/Pacific')
 
-
-    for z in range(10):
+    for z in range(r):
         
         match = summoner.match_history[z]
         dateOfMatch = match.start.to('US/Pacific')
-        if not sg.one_line_progress_meter(title="Checking match history", current_value=z, max_value=9, orientation='h'):
+        if not sg.one_line_progress_meter(title="Checking match history", current_value=z, max_value=r-1, orientation='h'):
             print('no')
         if not (dateCheck(now,dateOfMatch)):
             continue
@@ -74,23 +74,31 @@ def countLs(nam,reg):
 def third(x,y,z,option):
     sg.theme('SandyBeach')
     if(option==0):
+        h = (int(z/3600))
         layout = [
                     [sg.Text('Time Until Next Check:', font=('Helvetica', 20),justification='center'), 
                     sg.Text('0', font=('Helvetica', 20),justification='center', key='count'),
-                    sg.Text(('limit: ' + str(z)) , font=('Helvetica', 20))],
+                    sg.Text(('limit: ' + str(h)+ 'hr(s)') , font=('Helvetica', 20)),
+                    sg.Text(('' + str(int(z/60)-(60*h))+ 'min(s)') , font=('Helvetica', 20))],
 
                     [sg.Text('Time Played: ', font=('Helvetica', 20),justification='center'), 
                     sg.Text('0 hr(s)', font=('Helvetica', 15), key='h'),
                     sg.Text('0 min(s)', font=('Helvetica', 15), key='m'),
-                    sg.Text('0 sec(s): ', font=('Helvetica', 15), key='s')],
+                    sg.Text('0 sec(s): ', font=('Helvetica', 15), key='s'),
+                    sg.Text(':)',text_color='green',font=('Helvetica', 20),key='-k-')],
+
+                    [sg.Text(bible.getRandVerse())]
                 ]
     if(option==1):
         layout = [
                     [sg.Text('Time Until Next Check:', font=('Helvetica', 20),justification='center'), 
-                    sg.Text('0', font=('Helvetica', 20),justification='center', key='count')],
+                    sg.Text('0', font=('Helvetica', 20),justification='center', key='count'),
+                    sg.Text(('limit: ' + str(z)+ 'Ls') , font=('Helvetica', 20))],
 
                     [sg.Text('Losses: ', font=('Helvetica', 20),justification='center'), 
                     sg.Text('0', font=('Helvetica', 20),justification='center', key='amount')],
+
+                    [sg.Text(bible.getRandVerse())]
                 ]
     window = sg.Window('Running', layout, finalize=True,grab_anywhere=True)
     p = 0
@@ -100,15 +108,18 @@ def third(x,y,z,option):
         if event == sg.WIN_CLOSED:
             break
         if(p == 0):
-            p = 10
+            p = 30
             print("checking")
             Flag = True
             if(option==0):
                 t = int(timeAddT(x,y))
                 if(t>=z):
                     Flag = False
-                window['h'].update(str(int(t/3600))+' hr(s)')
-                window['m'].update(str(int(t/60))+' min(s)')
+                    window['-k-'].update('killing',text_color='red')
+                h = int(t/3600)
+                if(Flag): sg.Text(':)',text_color='green',key='-k-')
+                window['h'].update(str(h)+' hr(s)')
+                window['m'].update(str(int(t/60)-(60*h))+' min(s)')
                 window['s'].update(str(int(float(Decimal(str(t/60)) % 1)*60))+' sec(s)')
             if(option==1):
                 t = int(countLs(x,y))
@@ -149,8 +160,6 @@ def second(x,y,z,option):
 
 def first(option):
     if(option==0):
-        hrlist = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23',]
-        minlist = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31', '32', '33', '34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46', '47', '48', '49', '50', '51', '52', '53', '54', '55', '56', '57', '58', '59']
         layout = [
         [
             sg.Text("Summoner Name:"),
@@ -194,7 +203,8 @@ def first(option):
     window = sg.Window("League Addiction", layout,finalize=True)
     while True:
         event, values = window.read()
-        values['-Limit-'] = (int(values['-H-'])*3600 + int(values['-M-'])*60)
+
+        if(option ==0): values['-Limit-'] = (int(values['-H-'])*3600 + int(values['-M-'])*60)
         if event == "cancel" or event == sg.WIN_CLOSED:
             break
         if event =="sub":
