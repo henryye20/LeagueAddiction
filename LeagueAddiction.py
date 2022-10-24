@@ -8,7 +8,8 @@ import PySimpleGUI as sg
 import bible
 cass.set_riot_api_key(config.api_key)  # This overrides the value set in your configuration/settings.
 #summoner = cass.get_summoner(name="nicthequick", region="NA")
-#match = summoner.match_history[5]
+#match = summoner.match_history[0]
+#print(match.participants[summoner].stats.kda)
 #a = 5.1
 #print(int(a))
 #b = str(float(Decimal(str(a/60)) % 1)*60)
@@ -20,7 +21,7 @@ def dateCheck(x,y):
     else: return False
 
 #adds all the time of matches played today
-def timeAddT(nam,reg):
+def timeAddT(nam,reg,ranked):
     utc = arrow.utcnow()
     now = utc.to('US/Pacific')
     summoner = cass.get_summoner(name=nam, region=reg)
@@ -38,6 +39,9 @@ def timeAddT(nam,reg):
     
         if not sg.one_line_progress_meter(title="Checking match history", current_value=z, max_value=r-1, orientation='h'):
             print('no')
+        if(ranked):
+            if not (str(match.queue)=='Queue.ranked_solo_fives'):
+                continue
         if not (dateCheck(now,dateOfMatch)):
             continue
     
@@ -46,7 +50,7 @@ def timeAddT(nam,reg):
     return f
 
 
-def countLs(nam,reg):
+def countLs(nam,reg,ranked):
     summoner = cass.get_summoner(name=nam, region=reg)
     l = 0
     r = 15
@@ -63,6 +67,9 @@ def countLs(nam,reg):
         dateOfMatch = match.start.to('US/Pacific')
         if not sg.one_line_progress_meter(title="Checking match history", current_value=z, max_value=r-1, orientation='h'):
             print('no')
+        if(ranked):
+            if not (str(match.queue)=='Queue.ranked_solo_fives'):
+                continue
         if not (dateCheck(now,dateOfMatch)):
             continue
         
@@ -71,7 +78,7 @@ def countLs(nam,reg):
     print('Losses: '+str(l))
     return l
 
-def countGs(nam,reg):
+def countGs(nam,reg,ranked):
     summoner = cass.get_summoner(name=nam, region=reg)
     g = 0
     r = 15
@@ -88,6 +95,9 @@ def countGs(nam,reg):
         dateOfMatch = match.start.to('US/Pacific')
         if not sg.one_line_progress_meter(title="Checking match history", current_value=z, max_value=r-1, orientation='h'):
             print('no')
+        if(ranked):
+            if not (str(match.queue)=='Queue.ranked_solo_fives'):
+                continue
         if not (dateCheck(now,dateOfMatch)):
             continue
         g += 1
@@ -96,7 +106,7 @@ def countGs(nam,reg):
     return g
 
 
-def third(x,y,z,option):
+def third(x,y,z,option,ranked):
     sg.theme('SandyBeach')
     if(option==0):
         h = (int(z/3600))
@@ -154,7 +164,7 @@ def third(x,y,z,option):
             print("checking")
             Flag = True
             if(option==0):
-                t = int(timeAddT(x,y))
+                t = int(timeAddT(x,y,ranked))
                 if(t>=z):
                     Flag = False
                     window['-k-'].update('killing',text_color='red')
@@ -164,13 +174,13 @@ def third(x,y,z,option):
                 window['m'].update(str(int(t/60)-(60*h))+' min(s)')
                 window['s'].update(str(int(float(Decimal(str(t/60)) % 1)*60))+' sec(s)')
             if(option==1):
-                t = int(countLs(x,y))
+                t = int(countLs(x,y,ranked))
                 if(t>=z):
                     Flag = False
                     window['-k-'].update('killing',text_color='red')
                 window['amount'].update(t)
             if(option==2):
-                g = int(countGs(x,y))
+                g = int(countGs(x,y,ranked))
                 if(g>=z):
                     Flag = False
                     window['-k-'].update('killing',text_color='red')
@@ -184,7 +194,7 @@ def third(x,y,z,option):
     window.close()
 
 sg.theme('GreenMono')
-def second(x,y,z,option):
+def second(x,y,z,option,ranked):
     layout = [
     [
         sg.Text("Click to Start"),
@@ -201,7 +211,7 @@ def second(x,y,z,option):
         # 
         if event == "start":
             window.close()
-            third(x,y,z,option)
+            third(x,y,z,option,ranked)
             break
         
     window.close()
@@ -216,7 +226,8 @@ def first(option):
         ],
         [
             sg.Text("Region:"),
-            sg.In(key='-Region-',size=(6, 1))
+            sg.In(key='-Region-',size=(6, 1)),
+            sg.Checkbox('Check Ranked ONLY', default=False, key="-Ranked-")
         ],
         [
             sg.Text("Limit for Time:"),
@@ -238,11 +249,13 @@ def first(option):
         ],
         [
             sg.Text("Region:"),
-            sg.In(key='-Region-',size=(6, 1))
+            sg.In(key='-Region-',size=(6, 1)),
+            sg.Checkbox('Check Ranked ONLY', default=False, key="-Ranked-")
         ],
         [
             sg.Text("Limit for Losses:"),
-            sg.In(key='-Limit-',size=(8, 1))
+            sg.In(key='-Limit-',size=(8, 1)),
+            
         ],
         [
             sg.Button("Submit",key = "sub"),
@@ -257,7 +270,9 @@ def first(option):
         ],
         [
             sg.Text("Region:"),
-            sg.In(key='-Region-',size=(6, 1))
+            sg.In(key='-Region-',size=(6, 1)),
+            sg.Checkbox('Check Ranked ONLY', default=False, key="-Ranked-")
+            
         ],
         [
             sg.Text("Limit for Games: "),
@@ -271,19 +286,19 @@ def first(option):
     window = sg.Window("League Addiction", layout,finalize=True)
     while True:
         event, values = window.read()
-
-        if(option ==0): values['-Limit-'] = (int(values['-H-'])*3600 + int(values['-M-'])*60)
-        if event == "cancel" or event == sg.WIN_CLOSED:
-            break
-        if event =="sub":
-            window.close()
-            second(values['-Name-'],values['-Region-'],int(values['-Limit-']),option)
         if event == "back":
             window.close()
             gaming()
+        if event == "cancel" or event == sg.WIN_CLOSED:
+            break
+        
+        if event =="sub":
+            window.close()
+            if(option ==0): values['-Limit-'] = (int(values['-H-'])*3600 + int(values['-M-'])*60)
+            second(values['-Name-'],values['-Region-'],int(values['-Limit-']),option,values['-Ranked-'])
     window.close()
 
-def gaming():
+def start():
     layout = [
     [
         sg.Button("Time Limit",key = "tlim"),
@@ -309,7 +324,7 @@ def gaming():
         if event =="Glim":
             window.close()
             first(2)
-gaming()
+start()
 #timed("nicthequick","NA",40000)
 
 
