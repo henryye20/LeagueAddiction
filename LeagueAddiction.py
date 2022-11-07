@@ -8,10 +8,13 @@ import PySimpleGUI as sg
 import bible
 cass.set_riot_api_key(config.api_key)  # This overrides the value set in your configuration/settings.
 sg.theme('SystemDefault1')
-summoner = cass.get_summoner(name="nicthequick", region="NA")
-match = summoner.match_history[2]
-print(match.match_type())
-print(match.participants[summoner].stats.kda)
+#summoner = cass.get_summoner(name="nicthequick", region="NA")
+#match = summoner.match_history[2]
+#try:
+#    if not (str(match.queue)=='Queue.ranked_solo_fives'):
+#        print('hi')
+#except: 
+#    print('Weird match type skipping...')
 
 
 #checks if the dates of 2 matches are the same
@@ -39,7 +42,11 @@ def timeAddT(nam,reg,ranked):
         if not sg.one_line_progress_meter(title="Checking match history", current_value=z, max_value=r-1, orientation='h'):
             print('no')
         if(ranked):
-            if not (str(match.queue)=='Queue.ranked_solo_fives'):
+            try:
+                if not (str(match.queue)=='Queue.ranked_solo_fives'):
+                    continue
+            except: 
+                print('Weird match type skipping...')
                 continue
         if not (dateCheck(now,dateOfMatch)):
             continue
@@ -67,7 +74,13 @@ def countLs(nam,reg,ranked):
         if not sg.one_line_progress_meter(title="Checking match history", current_value=z, max_value=r-1, orientation='h'):
             print('no')
         if(ranked):
-            if not (str(match.queue)=='Queue.ranked_solo_fives'):
+            try:
+                q = match.queue
+                if not (str(q)=='Queue.ranked_solo_fives'):
+                    print(q)
+                    continue
+            except: 
+                print('Weird match type skipping...')
                 continue
         if not (dateCheck(now,dateOfMatch)):
             continue
@@ -96,7 +109,13 @@ def countGs(nam,reg,ranked):
         if not sg.one_line_progress_meter(title="Checking match history", current_value=z, max_value=r-1, orientation='h'):
             print('no')
         if(ranked):
-            if not (str(match.queue)=='Queue.ranked_solo_fives'):
+            try:
+                q = match.queue
+                if not (str(q)=='Queue.ranked_solo_fives'):
+                    print(q)
+                    continue
+            except: 
+                print('Weird match type skipping...')
                 continue
         if not (dateCheck(now,dateOfMatch)):
             continue
@@ -122,20 +141,28 @@ def checkKDA(nam,reg,ranked,assists):
         if not sg.one_line_progress_meter(title="Checking match history", current_value=z, max_value=r-1, orientation='h'):
             print('no')
         if(ranked):
-            if not (str(match.queue)=='Queue.ranked_solo_fives'):
+            try:
+                q = match.queue
+                if not (str(q)=='Queue.ranked_solo_fives'):
+                    print(q)
+                    continue
+            except: 
+                print('Weird match type skipping...')
                 continue
         #if not (dateCheck(now,dateOfMatch)):
         #   continue
         matchkda = match.participants[summoner].stats.kda
         if(assists) and (float(matchkda)<kda):
             kda = matchkda
-        elif((float(matchkda)<kda)):
+        else:
             kills = match.participants[summoner].stats.kills
             deaths = match.participants[summoner].stats.deaths
             if(deaths==0): 
-                kda = kills
+                tkda = kills
             else: 
-                kda = kills/deaths
+                tkda = kills/deaths
+            if(float(tkda)<kda):
+                kda = tkda
     print('KDA: '+str(kda))
     return kda
 
