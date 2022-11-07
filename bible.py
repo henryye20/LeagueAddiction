@@ -8,4 +8,3 @@ def getRandVerse():
     x = random.randint(1,len(web[b]))
     y = random.randint(1,len(web[b][x]))
     return str((web[b][x][y]))
-    

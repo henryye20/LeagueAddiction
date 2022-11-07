@@ -3,17 +3,16 @@ import arrow
 import config
 import cassiopeia as cass
 import kill
-import random
+import sys
 import PySimpleGUI as sg
 import bible
 cass.set_riot_api_key(config.api_key)  # This overrides the value set in your configuration/settings.
-#summoner = cass.get_summoner(name="nicthequick", region="NA")
-#match = summoner.match_history[0]
-#print(match.participants[summoner].stats.kda)
-#a = 5.1
-#print(int(a))
-#b = str(float(Decimal(str(a/60)) % 1)*60)
-#print(b)
+sg.theme('SystemDefault1')
+summoner = cass.get_summoner(name="nicthequick", region="NA")
+match = summoner.match_history[2]
+print(match.match_type())
+print(match.participants[summoner].stats.kda)
+
 
 #checks if the dates of 2 matches are the same
 def dateCheck(x,y):
@@ -78,6 +77,7 @@ def countLs(nam,reg,ranked):
     print('Losses: '+str(l))
     return l
 
+
 def countGs(nam,reg,ranked):
     summoner = cass.get_summoner(name=nam, region=reg)
     g = 0
@@ -105,50 +105,97 @@ def countGs(nam,reg,ranked):
     print('Games: '+str(g))
     return g
 
+def checkKDA(nam,reg,ranked,assists):
+    summoner = cass.get_summoner(name=nam, region=reg)
+    r=15
+    kda = sys.maxsize
+    sg.one_line_progress_meter(title="Checking match history", current_value=0, max_value=r-1,orientation='h')
+    key2='OK for 1 meter'
+    meter = sg.QuickMeter.active_meters[key2]
+    meter.window.DisableClose = False
+    utc = arrow.utcnow()
+    now = utc.to('US/Pacific')
 
-def third(x,y,z,option,ranked):
-    sg.theme('SandyBeach')
+    for z in range(r):
+        match = summoner.match_history[z]
+        dateOfMatch = match.start.to('US/Pacific')
+        if not sg.one_line_progress_meter(title="Checking match history", current_value=z, max_value=r-1, orientation='h'):
+            print('no')
+        if(ranked):
+            if not (str(match.queue)=='Queue.ranked_solo_fives'):
+                continue
+        #if not (dateCheck(now,dateOfMatch)):
+        #   continue
+        matchkda = match.participants[summoner].stats.kda
+        if(assists) and (float(matchkda)<kda):
+            kda = matchkda
+        elif((float(matchkda)<kda)):
+            kills = match.participants[summoner].stats.kills
+            deaths = match.participants[summoner].stats.deaths
+            if(deaths==0): 
+                kda = kills
+            else: 
+                kda = kills/deaths
+    print('KDA: '+str(kda))
+    return kda
+
+
+def third(x,y,z,option,ranked,assists):
+    
     if(option==0):
         h = (int(z/3600))
         layout = [
-                    [sg.Text('User: ' + str(x), font=('Helvetica', 20),justification='center')],
+                    [sg.Text('User: ' + str(x), justification='center')],
 
-                    [sg.Text('Time Until Next Check:', font=('Helvetica', 20),justification='center'), 
-                    sg.Text('0', font=('Helvetica', 20),justification='center', key='count'),
-                    sg.Text(('limit: ' + str(h)+ 'hr(s)') , font=('Helvetica', 20)),
-                    sg.Text(('' + str(int(z/60)-(60*h))+ 'min(s)') , font=('Helvetica', 20))],
+                    [sg.Text('Time Until Next Check:', justification='center'), 
+                    sg.Text('0', justification='center', key='count'),
+                    sg.Text(('limit: ' + str(h)+ 'hr(s)')),
+                    sg.Text(('' + str(int(z/60)-(60*h))+ 'min(s)'))],
 
-                    [sg.Text('Time Played: ', font=('Helvetica', 20),justification='center'), 
-                    sg.Text('0 hr(s)', font=('Helvetica', 15), key='h'),
-                    sg.Text('0 min(s)', font=('Helvetica', 15), key='m'),
-                    sg.Text('0 sec(s): ', font=('Helvetica', 15), key='s'),
-                    sg.Text(':)',text_color='green',font=('Helvetica', 20),key='-k-')],
+                    [sg.Text('Time Played: ', justification='center'), 
+                    sg.Text('0 hr(s)', key='h'),
+                    sg.Text('0 min(s)', key='m'),
+                    sg.Text('0 sec(s): ', key='s'),
+                    sg.Text(':)',text_color='green',key='-k-')],
 
                     [sg.Text(bible.getRandVerse())]
                 ]
     if(option==1):
         layout = [
-                    [sg.Text('User: ' + str(x), font=('Helvetica', 20),justification='center')],
-                    [sg.Text('Time Until Next Check:', font=('Helvetica', 20),justification='center'), 
-                    sg.Text('0', font=('Helvetica', 20),justification='center', key='count'),
-                    sg.Text(('limit: ' + str(z)+ ' Ls') , font=('Helvetica', 20))],
+                    [sg.Text('User: ' + str(x), justification='center')],
+                    [sg.Text('Time Until Next Check:', justification='center'), 
+                    sg.Text('0', justification='center', key='count'),
+                    sg.Text(('limit: ' + str(z)+ ' Ls') , )],
 
-                    [sg.Text('Losses: ', font=('Helvetica', 20),justification='center'), 
-                    sg.Text('0', font=('Helvetica', 20),justification='center', key='amount'),
-                    sg.Text(':)',text_color='green',font=('Helvetica', 20),key='-k-')],
+                    [sg.Text('Losses: ', justification='center'), 
+                    sg.Text('0', justification='center', key='amount'),
+                    sg.Text(':)',text_color='green',key='-k-')],
 
                     [sg.Text(bible.getRandVerse())]
                 ]
     if(option==2):
         layout = [
-                    [sg.Text('User: ' + str(x), font=('Helvetica', 20),justification='center')],
-                    [sg.Text('Time Until Next Check:', font=('Helvetica', 20),justification='center'), 
-                    sg.Text('0', font=('Helvetica', 20),justification='center', key='count'),
-                    sg.Text(('limit: ' + str(z)+ ' Game(s)') , font=('Helvetica', 20))],
+                    [sg.Text('User: ' + str(x), justification='center')],
+                    [sg.Text('Time Until Next Check:', justification='center'), 
+                    sg.Text('0', justification='center', key='count'),
+                    sg.Text(('limit: ' + str(z)+ ' Game(s)'))],
 
-                    [sg.Text('Games: ', font=('Helvetica', 20),justification='center'), 
-                    sg.Text('0', font=('Helvetica', 20),justification='center', key='amount'),
-                    sg.Text(':)',text_color='green',font=('Helvetica', 20),key='-k-')],
+                    [sg.Text('Games: ', justification='center'), 
+                    sg.Text('0', justification='center', key='amount'),
+                    sg.Text(':)',text_color='green',key='-k-')],
+
+                    [sg.Text(bible.getRandVerse())]
+                ]
+    if(option==3):
+        layout = [
+                    [sg.Text('User: ' + str(x), justification='center')],
+                    [sg.Text('Time Until Next Check:', justification='center'), 
+                    sg.Text('0', justification='center', key='count'),
+                    sg.Text(('KDAlimit: ' + str(z)))],
+
+                    [sg.Text('Lowest KDA: ', justification='center'), 
+                    sg.Text('no games today', justification='center', key='amount'),
+                    sg.Text(':)',text_color='green',key='-k-')],
 
                     [sg.Text(bible.getRandVerse())]
                 ]
@@ -160,7 +207,7 @@ def third(x,y,z,option,ranked):
         if event == sg.WIN_CLOSED:
             break
         if(p == 0):
-            p = 10
+            p = 60
             print("checking")
             Flag = True
             if(option==0):
@@ -180,40 +227,24 @@ def third(x,y,z,option,ranked):
                     window['-k-'].update('killing',text_color='red')
                 window['amount'].update(t)
             if(option==2):
-                g = int(countGs(x,y,ranked))
+                g = int(countGs(x,y,ranked,))
                 if(g>=z):
                     Flag = False
                     window['-k-'].update('killing',text_color='red')
                 window['amount'].update(g)
+            if(option==3):
+                kda = float(checkKDA(x,y,ranked,assists))
+                if(kda<z):
+                    Flag = False
+                    window['-k-'].update('killing',text_color='red')
+                if not (kda>=sys.maxsize):
+                    window['amount'].update(kda)
         p = p - 1
         window['count'].update(p)
         if(Flag):
             continue
         kill.leaguekill()
 
-    window.close()
-
-sg.theme('GreenMono')
-def second(x,y,z,option,ranked):
-    layout = [
-    [
-        sg.Text("Click to Start"),
-    ],
-    [
-        sg.Button("Start",key = "start"),
-    ],
-        ]
-    window = sg.Window("Second Window", layout)
-    while True:
-        event, values = window.read()
-        if event == sg.WIN_CLOSED:
-            break
-        # 
-        if event == "start":
-            window.close()
-            third(x,y,z,option,ranked)
-            break
-        
     window.close()
 
 
@@ -283,31 +314,58 @@ def first(option):
             sg.Button("back",key = "back"),
         ],
             ]
+    if(option == 3):
+        layout = [
+        [
+            sg.Text("Summoner Name:"),
+            sg.In(key='-Name-',size=(25, 1)) 
+        ],
+        [
+            sg.Text("Region:"),
+            sg.In(key='-Region-',size=(6, 1)),
+            sg.Checkbox('Check Ranked ONLY', default=False, key="-Ranked-")
+        ],
+        [
+            sg.Text("KDALimit for Games: "),
+            sg.In(key='-Limit-',size=(8, 1)),
+            sg.Checkbox('Count Assists as kills', default=True, key="-Assists-")
+        ],
+        [
+            sg.Button("Submit",key = "sub"),
+            sg.Button("back",key = "back"),
+        ],
+            ]
     window = sg.Window("League Addiction", layout,finalize=True)
     while True:
         event, values = window.read()
         if event == "back":
             window.close()
-            gaming()
+            start()
         if event == "cancel" or event == sg.WIN_CLOSED:
             break
         
         if event =="sub":
             window.close()
             if(option ==0): values['-Limit-'] = (int(values['-H-'])*3600 + int(values['-M-'])*60)
-            second(values['-Name-'],values['-Region-'],int(values['-Limit-']),option,values['-Ranked-'])
+            if(option ==3): 
+                third(values['-Name-'],values['-Region-'],float(values['-Limit-']),option,values['-Ranked-'],values['-Assists-'])
+                break
+            third(values['-Name-'],values['-Region-'],int(values['-Limit-']),option,values['-Ranked-'],False)
     window.close()
 
 def start():
     layout = [
     [
-        sg.Button("Time Limit",key = "tlim"),
+        sg.Button("Time Limit",key = "tlim",font=('bold')),
     ],
     [
-        sg.Button("Loss Limit",key = "Llim"),
+        sg.Button("Loss Limit",key = "Llim",font=('bold')),
     ],
     [
-        sg.Button("Game Limit",key = "Glim"),
+        sg.Button("Game Limit",key = "Glim",font=('bold')),
+    ],
+    [
+        sg.Button("KDA Limit",key = "kdalim",font=('bold')),
     ],
         ]
     window = sg.Window("League Addiction", layout,finalize=True)
@@ -324,6 +382,9 @@ def start():
         if event =="Glim":
             window.close()
             first(2)
+        if event =="kdalim":
+            window.close()
+            first(3)
 start()
 #timed("nicthequick","NA",40000)
 
