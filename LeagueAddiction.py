@@ -6,6 +6,7 @@ import kill
 import sys
 import PySimpleGUI as sg
 import bible
+from passlib.hash import bcrypt
 cass.set_riot_api_key(config.api_key)  # This overrides the value set in your configuration/settings.
 sg.theme('SystemDefault1')
 #summoner = cass.get_summoner(name="nicthequick", region="NA")
@@ -15,9 +16,63 @@ sg.theme('SystemDefault1')
 #        print('hi')
 #except: 
 #    print('Weird match type skipping...')
+global passw
+global passe
 
+def start():
+    global passw
+    layout = [
+    [
+        [sg.Text('Password', size=(10, 1)), sg.InputText('', key='-Pass-', password_char='*')],
+    ],
+    [
+        sg.Button("Submit",key = "-sub-"),
+        sg.Button("no pass",key = "-npass-"),
+    ],
+        ]
+    window = sg.Window("League Addiction", layout,finalize=True)
+    while True:
+        event, values = window.read()
+        if event == "cancel" or event == sg.WIN_CLOSED:
+            break
+        if event =="-sub-":
+            window.close()
+            global passw
+            passw = values['-Pass-']
+            global passe
+            passe = True
+            start2()
+        if event =="-npass-":
+            global passe
+            passe = False
+            start2()
+            
+def passwindow():
+    
+    layout = [
+    [
+        [sg.Text('Password', size=(10, 1)), sg.InputText('', key='-Pass1-', password_char='*')],
+    ],
+    [
+        sg.Button("Submit",key = "-sub-"),
+    ],
+        ]
+    window = sg.Window("Check", layout,finalize=True)
+    while True:
+        event, values = window.read()
+        if event == "cancel" or event == sg.WIN_CLOSED:
+            window.close()
+            passwindow()
+        if event =="-sub-":
+            global passw
+            print(str(values['-Pass1-'])+' '+str(passw))
+            if(str(values['-Pass1-'])==str(passw)):
+                window.close()
+                return True
+            
 
 #checks if the dates of 2 matches are the same
+hasher = bcrypt.using(rounds=13)
 def dateCheck(x,y):
     if(x.year==y.year and x.month==y.month and x.day==y.day): return True
     else: return False
@@ -149,8 +204,8 @@ def checkKDA(nam,reg,ranked,assists):
             except: 
                 print('Weird match type skipping...')
                 continue
-        #if not (dateCheck(now,dateOfMatch)):
-        #   continue
+        if not (dateCheck(now,dateOfMatch)):
+           continue
         matchkda = match.participants[summoner].stats.kda
         if(assists) and (float(matchkda)<kda):
             kda = matchkda
@@ -232,7 +287,10 @@ def third(x,y,z,option,ranked,assists):
     while True:                               
         event, values = window.read(timeout = 1000)
         if event == sg.WIN_CLOSED:
-            break
+            global passe
+            if(passe):
+                if(passwindow()):
+                    break
         if(p == 0):
             p = 60
             print("checking")
@@ -313,6 +371,7 @@ def first(option):
         [
             sg.Text("Limit for Losses:"),
             sg.In(key='-Limit-',size=(8, 1)),
+            sg.Checkbox('Consecutive', default=False, key="-Ranked-")
             
         ],
         [
@@ -367,7 +426,7 @@ def first(option):
         event, values = window.read()
         if event == "back":
             window.close()
-            start()
+            start2()
         if event == "cancel" or event == sg.WIN_CLOSED:
             break
         
@@ -380,7 +439,7 @@ def first(option):
             third(values['-Name-'],values['-Region-'],int(values['-Limit-']),option,values['-Ranked-'],False)
     window.close()
 
-def start():
+def start2():
     layout = [
     [
         sg.Button("Time Limit",key = "tlim",font=('bold')),
@@ -412,9 +471,8 @@ def start():
         if event =="kdalim":
             window.close()
             first(3)
-start()
-#timed("nicthequick","NA",40000)
 
+start()
 
 #print("{name} is a level {level} summoner on the {region} server.".format(name=summoner.name,
 #                                                                          level=summoner.level,
